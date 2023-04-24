@@ -1,0 +1,1 @@
+# auth-spring-boot-starter
