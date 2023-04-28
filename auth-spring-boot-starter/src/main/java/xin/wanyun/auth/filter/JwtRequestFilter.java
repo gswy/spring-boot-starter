@@ -3,7 +3,8 @@ package xin.wanyun.auth.filter;
 import com.baomidou.mybatisplus.core.metadata.TableInfo;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import xin.wanyun.auth.Guard;
-import xin.wanyun.auth.mapper.BaseUserMapper;
+import xin.wanyun.auth.mapper.AuthMapper;
+import xin.wanyun.auth.service.AuthService;
 import xin.wanyun.auth.utils.JwtTokenUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -30,11 +31,11 @@ public class JwtRequestFilter extends OncePerRequestFilter {
     /**
      * 数据库查询类
      */
-    private final BaseUserMapper baseUserMapper;
+    private final AuthMapper authMapper;
 
-    public JwtRequestFilter(Guard guard, BaseUserMapper baseUserMapper) {
+    public JwtRequestFilter(Guard guard, AuthMapper authMapper) {
         this.guard = guard;
-        this.baseUserMapper = baseUserMapper;
+        this.authMapper = authMapper;
     }
 
     @Override
@@ -61,7 +62,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             try {
                 Class<?> aClass = Class.forName(this.guard.getUserClassName());
                 TableInfo tableInfo = TableInfoHelper.getTableInfo(aClass);
-                Map<String, Object> user = baseUserMapper.findUserById(tableInfo, identity);
+                Map<String, Object> user = authMapper.findUserById(tableInfo, identity);
                 // 设置上下文用户
                 UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(user, null, null);
                 authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));

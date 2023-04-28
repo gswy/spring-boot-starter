@@ -1,55 +1,59 @@
 package xin.wanyun.auth;
 
+import com.baomidou.mybatisplus.core.metadata.TableInfo;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.*;
+import org.springframework.context.annotation.Configuration;
 import xin.wanyun.auth.filter.JwtRequestFilter;
-import xin.wanyun.auth.mapper.BaseUserMapper;
+import xin.wanyun.auth.mapper.AuthMapper;
 import xin.wanyun.auth.service.AuthService;
 import lombok.extern.slf4j.Slf4j;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import xin.wanyun.auth.service.impl.AuthServiceImpl;
 
 import java.io.PrintWriter;
-import java.util.List;
 import java.util.Objects;
 
 @Slf4j
+@MapperScan
 @Configuration
-@EnableWebSecurity
 @EnableAutoConfiguration
-@MapperScan("com.wanyun.auth.mapper")
-@ConditionalOnClass(AuthService.class)
-@ConfigurationProperties(prefix = "auth")
-public class AuthConfig {
-
-    /**
-     * 守卫组
-     */
-    private List<Guard> guards;
-
-    /**
-     * 是否放行除了守卫以外的路由
-     */
-    private boolean other = true;
+@ConditionalOnMissingBean({
+        AuthService.class,
+        BCryptPasswordEncoder.class,
+        AuthenticationManager.class,
+        SecurityFilterChain.class,
+})
+public class AuthConfiguration {
 
     @Autowired
-    private BaseUserMapper baseUserMapper;
+    AuthProperties properties;
+
+    @Autowired
+    private AuthMapper authMapper;
 
     @Autowired
     private AuthenticationConfiguration authenticationConfiguration;
+
+    AuthConfiguration() {
+        System.out.println("注入啦");
+    }
+
+    @Bean
+    public AuthService authService() {
+        return new AuthServiceImpl(properties);
+    }
 
     @Bean
     public BCryptPasswordEncoder bCryptPasswordEncoder() {
@@ -71,7 +75,7 @@ public class AuthConfig {
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
 
         // 放行路由
-        for (Guard guard : guards) {
+        for (Guard guard : properties.getGuards()) {
             for (Route route : guard.getRoutes()) {
                 httpSecurity
                         .authorizeHttpRequests()
@@ -81,7 +85,7 @@ public class AuthConfig {
         }
 
         // 拦截路由
-        for (Guard guard : guards) {
+        for (Guard guard : properties.getGuards()) {
             if (Objects.isNull(guard.getConfig().getExpired())) {
                 guard.getConfig().setExpired(3600000L);
             }
@@ -91,14 +95,14 @@ public class AuthConfig {
             guard.getConfig().setGuard(guard.getPrefix());
 
             httpSecurity
-                .authorizeHttpRequests()
-                .requestMatchers("/" + guard.getPrefix() + "/**")
-                .authenticated()
-                .and()
-                // 身份验证
-                .authenticationManager(authenticationManager(authenticationConfiguration))
-                // 添加jwt过滤器
-                .addFilterBefore(new JwtRequestFilter(guard, baseUserMapper), UsernamePasswordAuthenticationFilter.class);
+                    .authorizeHttpRequests()
+                    .requestMatchers("/" + guard.getPrefix() + "/**")
+                    .authenticated()
+                    .and()
+                    // 身份验证
+                    .authenticationManager(authenticationManager(authenticationConfiguration))
+                    // 添加jwt过滤器
+                    .addFilterBefore(new JwtRequestFilter(guard, authMapper), UsernamePasswordAuthenticationFilter.class);
         }
 
         // 错误处理器
@@ -123,28 +127,12 @@ public class AuthConfig {
                 });
 
         // 是否放行除了守卫以外的路由
-        if (this.other) {
+        if (properties.isOther()) {
             httpSecurity
                     .authorizeHttpRequests()
                     .anyRequest().permitAll();
         }
 
         return httpSecurity.build();
-    }
-
-    public List<Guard> getGuards() {
-        return guards;
-    }
-
-    public void setGuards(List<Guard> guards) {
-        this.guards = guards;
-    }
-
-    public boolean isOther() {
-        return other;
-    }
-
-    public void setOther(boolean other) {
-        this.other = other;
     }
 }

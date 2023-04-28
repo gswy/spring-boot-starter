@@ -1,1 +1,3 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=xin.wanyun.auth.AuthConfig
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  xin.wanyun.auth.AuthConfiguration\
+  xin.wanyun.auth.AuthProperties

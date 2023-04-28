@@ -1,12 +1,31 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '3.0.6'
+    id 'java-library'
+    id 'org.springframework.boot' version '[3.0.0, 3.0.6]'
     id 'io.spring.dependency-management' version '1.1.0'
 }
 
 group = 'xin.wanyun'
 version = '0.0.1'
 sourceCompatibility = '17'
+
+apply plugin: 'maven-publish'
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = 'xin.wanyun' // 修改为自己的groupId
+            artifactId = 'auth-spring-boot-starter' // 修改为自己的artifactId
+            version = '0.0.1' // 修改为自己的版本号
+
+            from components.java
+        }
+    }
+
+    repositories {
+        mavenLocal() // 将发布到本地Maven仓库中
+    }
+}
 
 repositories {
     mavenLocal()
@@ -22,8 +41,8 @@ jar {
 }
 
 dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-security'
-    implementation 'org.springframework.boot:spring-boot-starter-web'
+    api 'org.springframework.boot:spring-boot-starter-security'
+    api 'org.springframework.boot:spring-boot-starter-web'
     implementation 'mysql:mysql-connector-java:8.0.28'
     implementation 'com.baomidou:mybatis-plus-boot-starter:3.5.3'
     implementation 'com.auth0:java-jwt:4.4.0'

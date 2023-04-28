@@ -6,6 +6,6 @@ import xin.wanyun.auth.BaseUser;
 
 public interface AuthService {
 
-    public JwtResponse login(BaseUser user, String guard) throws AuthException;
+    JwtResponse login(BaseUser user, String guard) throws AuthException;
 
 }

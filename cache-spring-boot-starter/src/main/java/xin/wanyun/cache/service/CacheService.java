@@ -8,17 +8,17 @@ public interface CacheService {
     /**
      * 设置key缓存
      */
-    public <T> T setKey(String key, T clas);
+    public void setKey(String key, Object obj);
 
     /**
      * 设置带有过期秒的key
      */
-    public <T> T setKey(String key, T clas, int expired);
+    public void setKey(String key, Object obj, int expired);
 
     /**
      * 设置带有过期的key
      */
-    public <T> T setKey(String key, T clas, Duration duration);
+    public void setKey(String key, Object clas, Duration duration);
 
     /**
      * 获取key对象
@@ -44,5 +44,7 @@ public interface CacheService {
      * 删除Key
      */
     public void delKey(String key);
+
+    public String genderKey(String key);
 
 }

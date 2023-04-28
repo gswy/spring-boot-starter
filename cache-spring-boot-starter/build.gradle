@@ -1,6 +1,6 @@
 plugins {
 	id 'java'
-	id 'org.springframework.boot' version '3.0.6'
+	id 'org.springframework.boot' version '[3.0.0, 3.0.6]'
 	id 'io.spring.dependency-management' version '1.1.0'
 }
 
@@ -8,16 +8,41 @@ group = 'xin.wanyun'
 version = '0.0.1'
 sourceCompatibility = '17'
 
+apply plugin: 'maven-publish'
+
+publishing {
+	publications {
+		maven(MavenPublication) {
+			groupId = 'xin.wanyun'
+			artifactId = 'cache-spring-boot-starter'
+			version = '0.0.1'
+
+			from components.java
+		}
+	}
+
+	repositories {
+		mavenLocal() // 将发布到本地Maven仓库中
+	}
+}
+
 repositories {
+	mavenLocal()
 	mavenCentral()
 }
 
-dependencies {
-	implementation 'org.springframework.data:redis'
-	implementation 'org.springframework.boot:spring-boot-starter'
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+bootJar {
+	enabled = false
 }
 
-tasks.named('test') {
-	useJUnitPlatform()
+jar {
+	enabled = true
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter'
+	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+	annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
 }
