@@ -1,9 +1,11 @@
 package xin.wanyun.auth;
 
 import com.baomidou.mybatisplus.core.metadata.TableInfo;
+import org.apache.logging.log4j.message.StructuredDataMessage;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.*;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import xin.wanyun.auth.filter.JwtRequestFilter;
 import xin.wanyun.auth.mapper.AuthMapper;
 import xin.wanyun.auth.service.AuthService;
@@ -28,6 +30,7 @@ import java.util.Objects;
 @Slf4j
 @MapperScan
 @Configuration
+@EnableWebSecurity
 @EnableAutoConfiguration
 @ConditionalOnMissingBean({
         AuthService.class,
@@ -47,7 +50,7 @@ public class AuthConfiguration {
     private AuthenticationConfiguration authenticationConfiguration;
 
     AuthConfiguration() {
-        System.out.println("注入啦");
+        log.info("AuthService injection into ICO container...");
     }
 
     @Bean
@@ -65,44 +68,69 @@ public class AuthConfiguration {
         return authenticationConfiguration.getAuthenticationManager();
     }
 
+    /**
+     * 过滤器
+     */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
-
         // 关闭csrf
         httpSecurity
                 .csrf().disable()
-                .cors().and()
-                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+                .cors().disable()
+                .sessionManagement()
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS);
 
-        // 放行路由
-        for (Guard guard : properties.getGuards()) {
-            for (Route route : guard.getRoutes()) {
+        // 判断是单端还是多端
+        if (Objects.nonNull(properties.getGuard())) {
+            // 放行路由
+            for (Route route : properties.getGuard().getRoutes()) {
                 httpSecurity
                         .authorizeHttpRequests()
-                        .requestMatchers(route.getMethod(), "/" + guard.getPrefix() + route.getPath())
+                        .requestMatchers(route.getMethod(), route.getPath())
                         .permitAll();
             }
-        }
 
-        // 拦截路由
-        for (Guard guard : properties.getGuards()) {
-            if (Objects.isNull(guard.getConfig().getExpired())) {
-                guard.getConfig().setExpired(3600000L);
-            }
-            if (Objects.isNull(guard.getConfig().getSecret())) {
-                guard.getConfig().setSecret("XHDfb5ifFoj6TTMRq4qRfB3o1qm1zepQ");
-            }
-            guard.getConfig().setGuard(guard.getPrefix());
-
+            // 拦截路由
             httpSecurity
                     .authorizeHttpRequests()
-                    .requestMatchers("/" + guard.getPrefix() + "/**")
+                    .anyRequest()
                     .authenticated()
                     .and()
                     // 身份验证
                     .authenticationManager(authenticationManager(authenticationConfiguration))
                     // 添加jwt过滤器
-                    .addFilterBefore(new JwtRequestFilter(guard, authMapper), UsernamePasswordAuthenticationFilter.class);
+                    .addFilterBefore(new JwtRequestFilter(properties.getGuard(), authMapper), UsernamePasswordAuthenticationFilter.class);
+        } else {
+            // 放行路由
+            for (Guard guard : properties.getGuards()) {
+                for (Route route : guard.getRoutes()) {
+                    httpSecurity
+                            .authorizeHttpRequests()
+                            .requestMatchers(route.getMethod(), "/" + guard.getPrefix() + route.getPath())
+                            .permitAll();
+                }
+            }
+
+            // 拦截路由
+            for (Guard guard : properties.getGuards()) {
+                if (Objects.isNull(guard.getConfig().getExpired())) {
+                    guard.getConfig().setExpired(3600000L);
+                }
+                if (Objects.isNull(guard.getConfig().getSecret())) {
+                    guard.getConfig().setSecret("XHDfb5ifFoj6TTMRq4qRfB3o1qm1zepQ");
+                }
+                guard.getConfig().setGuard(guard.getPrefix());
+
+                httpSecurity
+                        .authorizeHttpRequests()
+                        .requestMatchers("/" + guard.getPrefix() + "/**")
+                        .authenticated()
+                        .and()
+                        // 身份验证
+                        .authenticationManager(authenticationManager(authenticationConfiguration))
+                        // 添加jwt过滤器
+                        .addFilterBefore(new JwtRequestFilter(guard, authMapper), UsernamePasswordAuthenticationFilter.class);
+            }
         }
 
         // 错误处理器
@@ -127,12 +155,11 @@ public class AuthConfiguration {
                 });
 
         // 是否放行除了守卫以外的路由
-        if (properties.isOther()) {
+        if (properties.isOther() && Objects.isNull(properties.getGuard())) {
             httpSecurity
                     .authorizeHttpRequests()
                     .anyRequest().permitAll();
         }
-
         return httpSecurity.build();
     }
 }

@@ -38,6 +38,24 @@ auth:
           path: /captcha
 ```
 
+## 入口文件
+```java
+package com.renjie.server;
+
+import org.mybatis.spring.annotation.MapperScan;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+// 必要扫描包 xin.wanyun.auth，当前包
+@SpringBootApplication(scanBasePackages = {"xin.wanyun.auth", "com.example.application"})
+@MapperScan("com.renjie.server.mapper")
+public class ServerApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(ServerApplication.class, args);
+    }
+}
+```
+
 ## 用户实体类
 ```java
 package com.example.demo.entity;

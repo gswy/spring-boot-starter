@@ -4,7 +4,6 @@ import com.baomidou.mybatisplus.core.metadata.TableInfo;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import xin.wanyun.auth.Guard;
 import xin.wanyun.auth.mapper.AuthMapper;
-import xin.wanyun.auth.service.AuthService;
 import xin.wanyun.auth.utils.JwtTokenUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

@@ -4,7 +4,6 @@ import xin.wanyun.auth.AuthProperties;
 import xin.wanyun.auth.BaseUser;
 import xin.wanyun.auth.Guard;
 import xin.wanyun.auth.exception.AuthException;
-import xin.wanyun.auth.mapper.AuthMapper;
 import xin.wanyun.auth.response.JwtResponse;
 import xin.wanyun.auth.service.AuthService;
 import xin.wanyun.auth.utils.JwtTokenUtil;
@@ -30,6 +29,12 @@ public class AuthServiceImpl implements AuthService {
         }
         String token = JwtTokenUtil.createToken(user.getIdentity(), guard);
         return new JwtResponse(token, guard.getConfig().getExpired());
+    }
+
+    @Override
+    public JwtResponse login(BaseUser user) throws AuthException {
+        String token = JwtTokenUtil.createToken(user.getIdentity(), properties.getGuard());
+        return new JwtResponse(token, properties.getGuard().getConfig().getExpired());
     }
 
 }

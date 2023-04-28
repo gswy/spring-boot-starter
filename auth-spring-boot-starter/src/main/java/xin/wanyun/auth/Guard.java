@@ -13,7 +13,7 @@ public class Guard {
     /**
      * 路由前缀（例如：admin，home等）
      */
-    private String prefix;
+    private String prefix = null;
 
     /**
      * 对应的用户类
